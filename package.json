@@ -1,0 +1,20 @@
+{
+  "name": "labloop",
+  "version": "1.0.0",
+  "description": "LabLoop - Intelligent Laboratory Resource Sharing & Utilization Management System",
+  "scripts": {
+    "server": "npm --prefix backend run dev",
+    "client": "npm --prefix frontend run dev",
+    "seed": "npm --prefix backend run seed",
+    "test": "node backend/scripts/testSuite.js"
+  },
+  "keywords": [
+    "labloop",
+    "laboratory-management",
+    "resource-sharing",
+    "mern-stack",
+    "resource-intelligence"
+  ],
+  "author": "Sahiltigga",
+  "license": "ISC"
+}
