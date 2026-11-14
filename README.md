@@ -26,8 +26,6 @@
 11. [REST API Documentation](#11-rest-api-documentation)
 12. [Booking Engine & Conflict Prevention Logic](#12-booking-engine--conflict-prevention-logic)
 13. [End-to-End Test Suite Verification](#13-end-to-end-test-suite-verification)
-14. [Suggested Viva Examination Questions & Model Answers](#14-suggested-viva-examination-questions--model-answers)
-
 ---
 
 ## 1. Executive Summary & Problem Statement
@@ -560,76 +558,6 @@ node scripts/testSuite.js
    TEST RESULTS: 24 PASSED, 0 FAILED                 
 ============================================================
 ```
-
----
-
-## 14. Suggested Viva Examination Questions & Model Answers
-
-### Q1: What makes LabLoop different from a standard laboratory booking system?
-**Answer:** Standard systems simply record dates in a calendar for a single department. LabLoop introduces the **Resource Intelligence Engine**, an explainable rule-based system that analyzes utilization across all academic departments. It identifies idle assets ($< 25\%$ usage), matches compatible instruments across departments with a composite score (0–100%), enforces safety and maintenance constraints, and prevents redundant institutional capital expenditure.
-
-### Q2: How does the backend prevent overlapping or double bookings?
-**Answer:** Double booking is checked on the server using the mathematical overlap formula:
-`NewStart < ExistingEnd AND NewEnd > ExistingStart`.
-For multi-unit items, LabLoop calculates the sum of all units reserved by overlapping `Pending`, `Approved`, and `Checked-Out` bookings. If the requested quantity exceeds the remaining unreserved stock in that specific time window, the backend rejects the transaction before writing to the database.
-
-### Q3: Why is the Native Fetch API used instead of Axios?
-**Answer:** The native Fetch API is part of modern ECMAScript and browser standards, eliminating external dependencies. In `frontend/src/services/api.js`, we built a standardized, reusable wrapper supporting all HTTP methods (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`), dynamic query parameter generation, automated injection of the JWT `Authorization: Bearer <token>` header, and consistent JSON error parsing.
-
-### Q4: How is Role-Based Access Control (RBAC) enforced?
-**Answer:** RBAC is enforced on both ends:
-1. **Frontend:** React Router routes are guarded by `ProtectedRoute.jsx` (ensures valid login) and `RoleRoute.jsx` (restricts routes to specific roles, such as `/analytics` for Admin/Faculty only).
-2. **Backend:** Every sensitive Express route runs `protect` (verifies JWT token and attaches `req.user`) followed by `authorize('admin', 'faculty', ...)` (`middleware/roleMiddleware.js`), returning an HTTP 403 Forbidden status if the user lacks permissions.
-
-### Q5: How is equipment utilization percentage calculated?
-**Answer:** Utilization percentage is calculated over an operating window (e.g., 30 days) as:
-$$\text{Utilization \%} = \left(\frac{\text{Actual Usage Hours}}{\text{Available Operating Hours}}\right) \times 100$$
-Operating hours assume standard institutional hours (8 hours/day $\times$ 30 days = 240 operating hours per inventory unit) adjusted for logged maintenance downtime. Actual usage is recorded upon equipment return during check-out.
-
-### Q6: What happens when an equipment item is flagged for maintenance?
-**Answer:** When a fault is reported:
-1. Equipment status transitions to `Under Maintenance` and condition updates to `Needs Maintenance`.
-2. The Resource Intelligence Engine immediately excludes this equipment from all recommendation and matching algorithms.
-3. The booking engine blocks any new reservation attempts.
-4. An automated notification warns users with upcoming bookings on that asset so they can reschedule.
-5. When the technician marks the repair `Completed`, the equipment status is restored to `Available` with its restored condition.
-
-### Q7: Why use MongoDB and Mongoose for this system?
-**Answer:** Laboratory equipment possesses diverse technical specifications (some have GPIO pins, others laser bandwidths or build volumes). MongoDB's flexible BSON document model accommodates these semi-structured specifications while Mongoose provides schema validation, data type enforcement, pre-save hooks (for bcrypt password hashing), and populate methods to handle relational references (`ObjectId`) across Users, Departments, Laboratories, Equipment, Bookings, and Maintenance.
-
-### Q8: How are passwords secured in the database?
-**Answer:** In `models/User.js`, a Mongoose `pre('save')` hook intercepts password creation and modification. It generates a 10-round salt using `bcryptjs` and replaces the plain-text password with the cryptographic hash. Plain-text passwords are never stored in the database or returned in API responses (`select('-password')`).
-
-### Q9: Can a student reserve equipment from another department?
-**Answer:** Yes. LabLoop's primary objective is cross-departmental sharing. A student from Computer Science can view and request available equipment from Mechanical Engineering (such as a 3D Printer). The request is placed in `Pending` status and routed to the faculty/lab manager of the hosting department for approval.
-
-### Q10: How does the frontend handle responsive layouts across mobile and desktop?
-**Answer:** The layout uses Tailwind CSS utility classes:
-- On desktop screens ($\ge 1024\text{px}$), the sidebar is statically positioned.
-- On smaller screens, the sidebar transitions off-canvas (`-translate-x-full`) and is toggled via a hamburger menu in `Navbar.jsx`, complete with an overlay backdrop (`bg-slate-950/70`).
-- Tables wrap in horizontal scroll containers (`overflow-x-auto`), and equipment cards adaptively flow from single-column to 4-column responsive CSS grids.
-
-### Q11: How is state shared between React components?
-**Answer:** Global state (authentication, current user role, and live in-app notifications) is managed via the React Context API (`AuthContext.jsx` and `NotificationContext.jsx`). Local page states (search queries, filters, active tabs, modal visibility) are managed with `useState` and `useMemo` hooks.
-
-### Q12: What is the purpose of the seed script?
-**Answer:** The seed script (`backend/scripts/seed.js`) provides an out-of-the-box demonstration dataset without requiring manual setup. It inserts 5 academic departments, 5 laboratories, 15 realistic pieces of equipment, pre-hashed accounts for all 4 roles, and historical bookings and maintenance records.
-
-### Q13: How does the matching score algorithm calculate compatibility?
-**Answer:** In `recommendationService.js`, the score (0–100) is a weighted sum:
-- **Category Compatibility (30 pts):** Matches the requested domain.
-- **Availability (25 pts):** Validates no overlapping bookings exist in the requested slot.
-- **Quantity (20 pts):** Validates whether sufficient spare stock exists.
-- **Location Proximity (15 pts):** Verifies lab room accessibility.
-- **Access Policy (10 pts):** Applies an inter-departmental collaboration bonus.
-
-### Q14: How does LabLoop handle network or database disconnections?
-**Answer:**
-- In `backend/config/db.js`, connection attempts to `MONGO_URI` include a 2.5-second timeout and gracefully fall back to an in-memory database if no external MongoDB Atlas instance is reachable.
-- In `frontend/src/services/api.js`, if a fetch call encounters a network drop or server downtime, it catches the `TypeError` and throws a friendly user notification: *"Unable to connect to LabLoop server. Please check your backend connection."*
-
-### Q15: How can LabLoop be extended for multi-institution support in the future?
-**Answer:** An `institution` field referencing an `Institution` model can be added to the `Department`, `User`, and `Equipment` schemas. Queries can then be scoped by `institution: req.user.institution`, enabling multi-tenant software-as-a-service (SaaS) architecture across multiple universities.
 
 ---
 
