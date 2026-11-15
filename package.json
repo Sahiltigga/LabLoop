@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "LabLoop - Intelligent Laboratory Resource Sharing & Utilization Management System",
   "scripts": {
-    "server": "npm --prefix backend run dev",
+    "server": "node backend/server.js",
     "client": "npm --prefix frontend run dev",
-    "seed": "npm --prefix backend run seed",
-    "test": "node backend/scripts/testSuite.js"
+    "seed": "node backend/scripts/seed.js",
+    "test": "node backend/scripts/testSuite.js",
+    "dev": "npm run server"
   },
   "keywords": [
     "labloop",
